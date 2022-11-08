@@ -15,9 +15,10 @@ users = [] # stores all usernames of clients
 
 
 # broadcast message to all clients connected to the server
-def broadcast(msg):
+def broadcast(msg, sender):
      for clientSocket in clientSockets:
-          clientSocket.send(msg);
+          if sender != clientSocket:
+               clientSocket.send(msg);
 
 
 
@@ -27,7 +28,7 @@ def handleMessage(client):
           try:
                # send message to all clients
               msg = client.recv(1024)
-              broadcast(msg)
+              broadcast(msg, client)
           except:
                # when connection is lost, remove client
                i = clientSockets.index(client)
@@ -51,7 +52,7 @@ def receiveClientConnection():
           username = connectionSocket.recv(1024).decode("ascii")
           users.append(username)
           clientSockets.append(connectionSocket)
-          broadcast(f"{username} has joined\n".encode("ascii"))
+          broadcast(f"{username} has joined\n".encode("ascii"), connectionSocket)
 
           # handle client individually at the same time
           thread = threading.Thread(target=handleMessage, args=(connectionSocket,))

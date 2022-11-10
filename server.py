@@ -15,12 +15,44 @@ users = [] # stores all usernames of clients
 
 
 # broadcast message to all clients connected to the server
-def broadcast(msg, sender):
-     for clientSocket in clientSockets:
-          if sender != clientSocket:
-               clientSocket.send(msg);
+def broadcast(msg, source):
+     # handle message source and destination
+     msgString = msg.decode('ascii')
+     msgBody = msgString.split(":")
+     username = ''
+     data = ''
+     mention = ''
+     if len(msgBody) > 1:
+          username = msgBody[0]
+          data = msgBody[1][1:]
+     if len(data) < 1:
+          return
+     else:
+          mention = data[0]
+     if mention == '@':
+          msgList = data.split(' ')
+          destination = msgList[0][1:]
+          msgList.pop(0)
+          targetedMsg = ' '.join(msgList)
+          unicast(targetedMsg, username, destination)
+     else:
+          for clientSocket in clientSockets:
+               if source != clientSocket:
+                    clientSocket.send(msg)
 
 
+# handles mentions or one-to-one messages
+def unicast(msg, source, destination):
+     try:
+          i = users.index(destination)
+          # for clientSocket in clientSockets:
+          #      if source != clientSocket:
+          clientSockets[i].send((source+': '+msg).encode('ascii'))
+     except:
+          i = users.index(source)
+          clientSockets[i].send(('Error: client has left').encode('ascii'))
+          return
+          
 
 # handle when receiving message from client
 def handleMessage(client):
@@ -52,7 +84,7 @@ def receiveClientConnection():
           username = connectionSocket.recv(1024).decode("ascii")
           users.append(username)
           clientSockets.append(connectionSocket)
-          broadcast(f"{username} has joined\n".encode("ascii"), connectionSocket)
+          broadcast(f"{username} has joined!\n".encode("ascii"), connectionSocket)
 
           # handle client individually at the same time
           thread = threading.Thread(target=handleMessage, args=(connectionSocket,))

@@ -32,7 +32,7 @@ def receiveServerMessage():
 # handle when client sends message to the server
 def sendServerMessage():
     while True:
-        msg = '{}: {}\n'.format(username, input(''))
+        msg = '{}: {}'.format(username, input(''))
         clientSocket.send(msg.encode("ascii"))
 
 

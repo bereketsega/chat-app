@@ -26,6 +26,9 @@ def broadcast(msg, source):
           username = msgBody[0]
           data = msgBody[1][1:]
      if len(data) < 1:
+          for clientSocket in clientSockets:
+               if source != clientSocket:
+                    clientSocket.send(msg)
           return
      else:
           mention = data[0]
@@ -50,7 +53,7 @@ def unicast(msg, source, destination):
           clientSockets[i].send((source+': '+msg).encode('ascii'))
      except:
           i = users.index(source)
-          clientSockets[i].send(('Error: client has left').encode('ascii'))
+          clientSockets[i].send(('client has left').encode('ascii'))
           return
           
 
@@ -68,7 +71,7 @@ def handleMessage(client):
                client.close()
                # remove username also
                username = users[i]
-               broadcast('\n{} left!'.format(username).encode('ascii'))
+               broadcast('\n{} left!'.format(username).encode('ascii'), None)
                users.remove(username)
                break
 

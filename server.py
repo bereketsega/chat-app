@@ -22,51 +22,45 @@ clientsPublicKeys = []
 # broadcast message to all clients connected to the server
 def broadcast(msg, source):
      # handle message source and destination
-     index = 0
-     for clientSocket in clientSockets:
-          if source != clientSocket:
-               clientSocket.send(rsa.encrypt(msg, clientsPublicKeys[index]))
-               break
-          index+=1
-
-
-     # msgString = msg.decode('ascii')
-     # msgBody = msgString.split(":")
-     # username = ''
-     # data = ''
-     # mention = ''
-     # if len(msgBody) > 1:
-     #      username = msgBody[0]
-     #      data = msgBody[1][1:]
-     # if len(data) < 1:
-     #      for clientSocket in clientSockets:
-     #           if source != clientSocket:
-     #                clientSocket.send(msg)
-     #      return
-     # else:
-     #      mention = data[0]
-     # if mention == '@':
-     #      msgList = data.split(' ')
-     #      destination = msgList[0][1:]
-     #      msgList.pop(0)
-     #      targetedMsg = ' '.join(msgList)
-     #      unicast(targetedMsg, username, destination)
-     # else:
-     #      for clientSocket in clientSockets:
-     #           if source != clientSocket:
-     #                clientSocket.send(msg)
+     msgString = msg.decode('ascii')
+     msgBody = msgString.split(":")
+     username = ''
+     data = ''
+     mention = ''
+     if len(msgBody) > 1:
+          username = msgBody[0]
+          data = msgBody[1][1:]
+     if len(data) < 1:
+          index = 0
+          for clientSocket in clientSockets:
+               if source != clientSocket:
+                    clientSocket.send(rsa.encrypt(msg, clientsPublicKeys[index]))
+               index+=1
+          return
+     else:
+          mention = data[0]
+     if mention == '@':
+          msgList = data.split(' ')
+          destination = msgList[0][1:]
+          msgList.pop(0)
+          targetedMsg = ' '.join(msgList)
+          unicast(targetedMsg, username, destination)
+     else:
+          index = 0
+          for clientSocket in clientSockets:
+               if source != clientSocket:
+                    clientSocket.send(rsa.encrypt(msg, clientsPublicKeys[index]))
+               index+=1
 
 
 # handles mentions or one-to-one messages
 def unicast(msg, source, destination):
      try:
           i = users.index(destination)
-          # for clientSocket in clientSockets:
-          #      if source != clientSocket:
-          clientSockets[i].send((source+': '+msg).encode('ascii'))
+          clientSockets[i].send(rsa.encrypt((source+': '+msg).encode('ascii'), clientsPublicKeys[i]))
      except:
           i = users.index(source)
-          clientSockets[i].send(('client has left').encode('ascii'))
+          clientSockets[i].send(rsa.encrypt( ('client has left').encode('ascii'), clientsPublicKeys[i]))
           return
           
 
@@ -110,11 +104,7 @@ def receiveClientConnection():
           print("{} has connected!".format(str(addr)))
 
           connectionSocket.send(rsa.encrypt("username".encode(), clientPublicKey))
-
-
-          # connectionSocket.send("username".encode())
           username = connectionSocket.recv(1024).decode("ascii")
-          print(clientsPublicKeys)
           users.append(username)
           clientSockets.append(connectionSocket)
           broadcast(f"{username} has joined!\n".encode("ascii"), connectionSocket)

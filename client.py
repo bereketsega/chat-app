@@ -1,5 +1,10 @@
+import rsa
 from socket import * # to manage connection
 import threading # to manage multiple clients
+
+# generate encryption keys
+publicKey, privateKey = rsa.newkeys(1024)
+# receiverPublicKey = None
 
 username = input("Enter your username: ")
 
@@ -11,13 +16,16 @@ clientSocket = socket(AF_INET, SOCK_STREAM)
 # connect the client to the server
 clientSocket.connect((serverName,serverPort))
 
+# exchange public keys with the server
+serverPublicKey = rsa.PublicKey.load_pkcs1(clientSocket.recv(1024))
+clientSocket.send(publicKey.save_pkcs1("PEM"))
 
 
 # handle when receiving message from the server
 def receiveServerMessage():
     while True:
         try:
-            msg = clientSocket.recv(1024).decode("ascii");
+            msg = rsa.decrypt(clientSocket.recv(1024), privateKey).decode("ascii");
             if msg == "username":
                 clientSocket.send(username.encode("ascii"))
             else:
@@ -33,7 +41,7 @@ def receiveServerMessage():
 def sendServerMessage():
     while True:
         msg = '{}: {}'.format(username, input(''))
-        clientSocket.send(msg.encode("ascii"))
+        clientSocket.send(rsa.encrypt(msg.encode("ascii"), serverPublicKey))
 
 
 
